@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@v7"
 
       - name: "Build"
         run: "DOCKER_BUILDKIT=1 docker build php/${{ matrix.base-image }}/${{ matrix.php-version }} -t ghcr.io/core23/jenkins-php-agent:${{ matrix.php-version }}-${{ matrix.base-image }}"
