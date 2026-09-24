@@ -8,3 +8,10 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - automerge
+
+  - package-ecosystem: docker
+    directories:
+      - "/php/alpine"
+      - "/php/debian"
+    schedule:
+      interval: weekly
