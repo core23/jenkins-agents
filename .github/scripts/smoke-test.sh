@@ -15,7 +15,11 @@ for ext in $extensions "Zend OPcache"; do
 done
 [ "$missing" -eq 0 ]
 
-php -r 'exit(ini_get("xdebug.mode") === "off" ? 0 : 1);' || { echo "xdebug.mode is not off"; exit 1; }
+php -r 'exit(ini_get("xdebug.mode") === "off" ? 0 : 1);' || {
+    echo "xdebug.mode is '$(php -r 'echo ini_get("xdebug.mode");')', expected 'off'"
+    php --ini
+    exit 1
+}
 php -r 'exit(ini_get("opcache.enable_cli") ? 0 : 1);' || { echo "opcache.enable_cli is not enabled"; exit 1; }
 
 php --version
