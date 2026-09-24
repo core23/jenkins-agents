@@ -6,6 +6,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   release-container:
     name: "Push Docker image to GitHub Packages"
@@ -41,9 +44,6 @@ jobs:
             type=raw,value=${{ matrix.php-version }}-${{ matrix.base-image }}
             type=raw,value=${{ matrix.php-version }},enable=${{ startsWith(matrix.base-image, 'alpine') }}
 
-      - name: "Setup QEMU"
-        uses: "docker/setup-qemu-action@v4"
-
       - name: "Setup Docker Buildx"
         uses: "docker/setup-buildx-action@v4"
 
@@ -68,3 +68,8 @@ jobs:
           push: true
           tags: "${{ steps.meta.outputs.tags }}"
           labels: "${{ steps.meta.outputs.labels }}"
+          # Scheduled builds must pick up fresh upstream packages
+          no-cache: ${{ github.event_name == 'schedule' }}
+          pull: true
+          cache-from: "type=gha,scope=${{ matrix.php-version }}-${{ matrix.base-image }}"
+          cache-to: "type=gha,mode=max,scope=${{ matrix.php-version }}-${{ matrix.base-image }}"
