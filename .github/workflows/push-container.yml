@@ -43,6 +43,8 @@ jobs:
           tags: |
             type=raw,value=${{ matrix.php-version }}-${{ matrix.base-image }}
             type=raw,value=${{ matrix.php-version }},enable=${{ startsWith(matrix.base-image, 'alpine') }}
+            # latest points to the newest PHP version on Alpine, update it when a new PHP version is added
+            type=raw,value=latest,enable=${{ matrix.php-version == '8.5' && matrix.base-image == 'alpine' }}
 
       - name: "Setup Docker Buildx"
         uses: "docker/setup-buildx-action@v4"
