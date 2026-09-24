@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NODE_VERSION: "24"
+
 jobs:
   release-container:
     name: "Push Docker image to GitHub Packages"
@@ -66,7 +69,9 @@ jobs:
         uses: "docker/build-push-action@v7"
         with:
           context: "php/${{ matrix.base-image }}"
-          build-args: "PHP_VERSION=${{ matrix.php-version }}"
+          build-args: |
+            PHP_VERSION=${{ matrix.php-version }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
           platforms: "linux/amd64"
           push: true
           tags: "${{ steps.meta.outputs.tags }}"

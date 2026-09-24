@@ -1,7 +1,11 @@
 ARG PHP_VERSION=8.5
+ARG NODE_VERSION=24
 
 # Source of the agent launcher script and remoting jar
 FROM jenkins/inbound-agent:latest-jdk21 AS agent
+
+# Source of the Node.js binaries, so Alpine and Debian images share the same major version
+FROM node:${NODE_VERSION}-trixie-slim AS node
 
 FROM php:${PHP_VERSION}-cli-trixie
 
@@ -40,13 +44,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY custom.ini /usr/local/etc/php/conf.d/custom.ini
 
 # NPM, PNPM, YARN
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh \
-    && bash nodesource_setup.sh \
-    && rm nodesource_setup.sh \
-    && apt-get update && apt-get install -y nodejs \
-    && npm install -g --unsafe-perm yarn pnpm \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack \
+    && npm install -g yarn pnpm
 
 # PIE
 COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie

@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NODE_VERSION: "24"
+
 jobs:
   docker-build:
     name: "Build ${{ matrix.php-version }}-${{ matrix.base-image }}"
@@ -43,7 +46,9 @@ jobs:
         uses: "docker/build-push-action@v7"
         with:
           context: "php/${{ matrix.base-image }}"
-          build-args: "PHP_VERSION=${{ matrix.php-version }}"
+          build-args: |
+            PHP_VERSION=${{ matrix.php-version }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
           load: true
           tags: "${{ env.IMAGE }}"
           # Scheduled builds must pick up fresh upstream packages
@@ -59,4 +64,4 @@ jobs:
         run: "docker images ${{ env.IMAGE }} --format \"{{.Repository}}:{{.Tag}} -> {{.Size}}\""
 
       - name: "Smoke test"
-        run: "docker run --rm -i --entrypoint sh ${{ env.IMAGE }} -s < .github/scripts/smoke-test.sh"
+        run: "docker run --rm -i -e EXPECTED_NODE_MAJOR=${{ env.NODE_VERSION }} --entrypoint sh ${{ env.IMAGE }} -s < .github/scripts/smoke-test.sh"
