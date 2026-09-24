@@ -1,8 +1,10 @@
 ARG PHP_VERSION=8.5
+ARG NODE_VERSION=24
 
 FROM jenkins/inbound-agent:alpine
 
 ARG PHP_VERSION
+ARG NODE_VERSION
 
 LABEL org.opencontainers.image.authors="Christian Gripp <mail@core23.de>"
 
@@ -14,8 +16,8 @@ RUN apk update && apk upgrade && apk add --update alpine-sdk && \
     apk add --no-cache make cmake gpg gpg-agent bash curl
 
 # NPM
-RUN apk add --no-cache nodejs npm \
-    && npm install -g --unsafe-perm yarn pnpm
+RUN apk add --no-cache "nodejs~=${NODE_VERSION}" npm \
+    && npm install -g yarn pnpm
 
 # PHP
 COPY php.ini /tmp/php.ini

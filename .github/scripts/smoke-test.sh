@@ -27,6 +27,9 @@ composer --version
 phive --version
 symfony version --no-interaction
 node --version
+if [ -n "${EXPECTED_NODE_MAJOR:-}" ]; then
+    [ "$(node -p 'process.versions.node.split(".")[0]')" = "$EXPECTED_NODE_MAJOR" ] || { echo "Expected Node $EXPECTED_NODE_MAJOR"; exit 1; }
+fi
 npm --version
 yarn --version
 pnpm --version
