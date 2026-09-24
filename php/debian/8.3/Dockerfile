@@ -63,6 +63,9 @@ RUN wget -O phive.phar "https://phar.io/releases/phive.phar" && \
     chmod +x phive.phar && \
     mv phive.phar /usr/local/bin/phive
 
+# Symfony CLI
+RUN curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir /usr/local/bin
+
 # Define the Jenkins agent home directory
 ENV JENKINS_AGENT_HOME=/home/jenkins/agent
 
