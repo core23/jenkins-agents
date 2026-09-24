@@ -42,7 +42,7 @@ RUN set -eux; \
         -X https://dl-cdn.alpinelinux.org/alpine/edge/testing \
         "$@"; \
     ln -sf "/usr/bin/php${v}" /usr/bin/php; \
-    mv /tmp/php.ini "/etc/php${v}/conf.d/zz-custom.ini"
+    mv /tmp/php.ini "/etc/php${v}/conf.d/custom.ini"
 
 # Get Composer
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer

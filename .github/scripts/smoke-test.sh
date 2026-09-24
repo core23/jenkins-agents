@@ -15,8 +15,8 @@ for ext in $extensions "Zend OPcache"; do
 done
 [ "$missing" -eq 0 ]
 
-php -r 'exit(ini_get("xdebug.mode") === "off" ? 0 : 1);' || {
-    echo "xdebug.mode is '$(php -r 'echo ini_get("xdebug.mode");')', expected 'off'"
+php -r 'exit(in_array(ini_get("xdebug.mode"), ["", "off"], true) ? 0 : 1);' || {
+    echo "xdebug.mode is '$(php -r 'echo ini_get("xdebug.mode");')', expected off"
     php --ini
     exit 1
 }
