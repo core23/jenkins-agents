@@ -25,19 +25,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         bcmath \
+        exif \
         gd \
         intl \
         mysqli \
+        opcache \
+        pcntl \
+        pdo_mysql \
         soap \
-        zip \
         xsl \
+        zip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 COPY custom.ini /usr/local/etc/php/conf.d/custom.ini
 
 # NPM, PNPM, YARN
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh \
+    && bash nodesource_setup.sh \
+    && rm nodesource_setup.sh \
     && apt-get update && apt-get install -y nodejs \
     && npm install -g --unsafe-perm yarn pnpm \
     && apt-get clean \
@@ -49,6 +55,7 @@ COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 RUN pie install pecl/pcov \
     && pie install mongodb/mongodb-extension \
     && pie install imagick/imagick \
+    && pie install phpredis/phpredis \
     && pie install xdebug/xdebug
 
 # Composer
@@ -64,7 +71,9 @@ RUN wget -O phive.phar "https://phar.io/releases/phive.phar" && \
     mv phive.phar /usr/local/bin/phive
 
 # Symfony CLI
-RUN curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir /usr/local/bin
+RUN curl -fsSL https://get.symfony.com/cli/installer -o symfony_installer.sh \
+    && bash symfony_installer.sh --install-dir /usr/local/bin \
+    && rm symfony_installer.sh
 
 # Define the Jenkins agent home directory
 ENV JENKINS_AGENT_HOME=/home/jenkins/agent
@@ -84,7 +93,7 @@ WORKDIR $JENKINS_AGENT_HOME
 # Download the JNLP agent launcher (JAR file)
 ARG JENKINS_REMOTING_VERSION=3309.v27b_9314fd1a_4
 
-RUN curl -Lo agent.jar https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting/${JENKINS_REMOTING_VERSION}/remoting-${JENKINS_REMOTING_VERSION}.jar
+RUN curl -fsSLo agent.jar https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting/${JENKINS_REMOTING_VERSION}/remoting-${JENKINS_REMOTING_VERSION}.jar
 
 # Run the agent when the container starts
 ENTRYPOINT ["java", "-jar", "agent.jar"]

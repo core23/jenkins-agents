@@ -71,7 +71,9 @@ RUN wget -O phive.phar "https://phar.io/releases/phive.phar" && \
     mv phive.phar /usr/local/bin/phive
 
 # Symfony CLI
-RUN curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir /usr/local/bin
+RUN curl -fsSL https://get.symfony.com/cli/installer -o symfony_installer.sh \
+    && bash symfony_installer.sh --install-dir /usr/local/bin \
+    && rm symfony_installer.sh
 
 USER jenkins
 
