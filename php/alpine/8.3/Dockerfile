@@ -7,7 +7,7 @@ USER root
 
 # cmd tools
 RUN apk update && apk upgrade && apk add --update alpine-sdk && \
-    apk add --no-cache make cmake gpg gpg-agent
+    apk add --no-cache make cmake gpg gpg-agent bash curl
 
 # NPM
 RUN apk add --no-cache nodejs npm \
@@ -73,6 +73,9 @@ RUN wget -O phive.phar "https://phar.io/releases/phive.phar" && \
     rm phive.phar.asc && \
     chmod +x phive.phar && \
     mv phive.phar /usr/local/bin/phive
+
+# Symfony CLI
+RUN curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir /usr/local/bin
 
 USER jenkins
 
