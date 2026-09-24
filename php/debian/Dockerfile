@@ -1,11 +1,16 @@
-FROM php:8.3
+ARG PHP_VERSION=8.5
+
+# Source of the agent launcher script and remoting jar
+FROM jenkins/inbound-agent:latest-jdk21 AS agent
+
+FROM php:${PHP_VERSION}-cli-trixie
+
+ARG PHP_VERSION
 
 LABEL org.opencontainers.image.authors="mail@core23.de"
 
 # Extensions
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    apt-transport-https \
-    apt-utils sendmail \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
@@ -21,20 +26,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ant \
     openssh-client \
+    openjdk-21-jre-headless \
+    sendmail \
     wget \
+    && exts="bcmath exif gd intl mysqli pcntl pdo_mysql soap xsl zip" \
+    # opcache is built into PHP 8.5 and only needs to be installed on older versions
+    && { php -m | grep -qi 'opcache' || exts="$exts opcache"; } \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        bcmath \
-        exif \
-        gd \
-        intl \
-        mysqli \
-        opcache \
-        pcntl \
-        pdo_mysql \
-        soap \
-        xsl \
-        zip \
+    && docker-php-ext-install -j"$(nproc)" $exts \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -75,25 +74,28 @@ RUN curl -fsSL https://get.symfony.com/cli/installer -o symfony_installer.sh \
     && bash symfony_installer.sh --install-dir /usr/local/bin \
     && rm symfony_installer.sh
 
-# Define the Jenkins agent home directory
-ENV JENKINS_AGENT_HOME=/home/jenkins/agent
+# Jenkins agent, taken from the official inbound-agent image
+ARG user=jenkins
+ARG group=jenkins
+ARG uid=1000
+ARG gid=1000
+ARG AGENT_WORKDIR=/home/${user}/agent
 
-# Install Java and curl
-RUN apt-get update && apt-get install -y \
-    openjdk-21-jre-headless \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ENV AGENT_WORKDIR=${AGENT_WORKDIR}
 
-# Create the Jenkins user
-RUN useradd -m -d /home/jenkins -s /bin/bash jenkins
-USER jenkins
-WORKDIR $JENKINS_AGENT_HOME
+COPY --from=agent /usr/share/jenkins/agent.jar /usr/share/jenkins/agent.jar
+COPY --from=agent /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-agent
 
-# Download the JNLP agent launcher (JAR file)
-ARG JENKINS_REMOTING_VERSION=3309.v27b_9314fd1a_4
+RUN groupadd -g ${gid} ${group} \
+    && useradd -m -d /home/${user} -u ${uid} -g ${gid} -s /bin/bash ${user} \
+    && ln -s /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-slave \
+    && mkdir -p /home/${user}/.jenkins "${AGENT_WORKDIR}" \
+    && chown -R ${uid}:${gid} /home/${user}
 
-RUN curl -fsSLo agent.jar https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting/${JENKINS_REMOTING_VERSION}/remoting-${JENKINS_REMOTING_VERSION}.jar
+USER ${user}
+WORKDIR /home/${user}
 
-# Run the agent when the container starts
-ENTRYPOINT ["java", "-jar", "agent.jar"]
+VOLUME /home/${user}/.jenkins
+VOLUME ${AGENT_WORKDIR}
+
+ENTRYPOINT ["/usr/local/bin/jenkins-agent"]

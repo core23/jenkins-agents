@@ -1,4 +1,8 @@
+ARG PHP_VERSION=8.5
+
 FROM jenkins/inbound-agent:alpine
+
+ARG PHP_VERSION
 
 LABEL org.opencontainers.image.authors="Christian Gripp <mail@core23.de>"
 
@@ -14,49 +18,31 @@ RUN apk add --no-cache nodejs npm \
     && npm install -g --unsafe-perm yarn pnpm
 
 # PHP
-RUN apk add --no-cache \
+COPY php.ini /tmp/php.ini
+
+RUN set -eux; \
+    v="$(echo "${PHP_VERSION}" | tr -d .)"; \
+    set -- "php${v}"; \
+    for ext in \
+        bcmath ctype curl dom exif fileinfo fpm gd iconv intl mbstring mysqli openssl pcntl \
+        pdo pdo_mysql pdo_sqlite pecl-imagick pecl-mongodb pecl-pcov pecl-redis phar posix \
+        session simplexml soap sodium tokenizer xsl xml xmlreader xmlwriter zip; \
+    do \
+        set -- "$@" "php${v}-${ext}"; \
+    done; \
+    # PHP 8.5 ships cli, opcache and zlib in the core package and names xdebug differently
+    if [ "${v}" = "85" ]; then \
+        set -- "$@" "php${v}-pecl-xdebug"; \
+    else \
+        set -- "$@" "php${v}-cli" "php${v}-opcache" "php${v}-xdebug" "php${v}-zlib"; \
+    fi; \
+    apk add --no-cache \
         -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
         -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
         -X https://dl-cdn.alpinelinux.org/alpine/edge/testing \
-        php85 \
-        php85-bcmath \
-        php85-ctype \
-        php85-curl \
-        php85-dom \
-        php85-exif \
-        php85-fileinfo \
-        php85-fpm \
-        php85-gd \
-        php85-iconv \
-        php85-intl \
-        php85-mbstring \
-        php85-mysqli \
-        php85-openssl \
-        php85-pcntl \
-        php85-pdo \
-        php85-pdo_mysql \
-        php85-pdo_sqlite \
-        php85-pecl-imagick \
-        php85-pecl-mongodb \
-        php85-pecl-pcov \
-        php85-pecl-redis \
-        php85-pecl-xdebug \
-        php85-phar \
-        php85-posix \
-        php85-session \
-        php85-simplexml \
-        php85-soap \
-        php85-sodium \
-        php85-tokenizer \
-        php85-xsl \
-        php85-xml \
-        php85-xmlreader \
-        php85-xmlwriter \
-        php85-zip
-
-RUN ln -sf /usr/bin/php85 /usr/bin/php
-
-COPY php.ini /etc/php85/conf.d/custom.ini
+        "$@"; \
+    ln -sf "/usr/bin/php${v}" /usr/bin/php; \
+    mv /tmp/php.ini "/etc/php${v}/conf.d/custom.ini"
 
 # Get Composer
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
@@ -77,4 +63,4 @@ RUN curl -fsSL https://get.symfony.com/cli/installer -o symfony_installer.sh \
 
 USER jenkins
 
-ENTRYPOINT ["jenkins-slave"]
+ENTRYPOINT ["jenkins-agent"]

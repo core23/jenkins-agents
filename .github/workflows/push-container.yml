@@ -63,7 +63,8 @@ jobs:
       - name: "Build and push"
         uses: "docker/build-push-action@v7"
         with:
-          context: "php/${{ matrix.base-image }}/${{ matrix.php-version }}"
+          context: "php/${{ matrix.base-image }}"
+          build-args: "PHP_VERSION=${{ matrix.php-version }}"
           platforms: "linux/amd64"
           push: true
           tags: "${{ steps.meta.outputs.tags }}"

@@ -42,7 +42,8 @@ jobs:
       - name: "Build"
         uses: "docker/build-push-action@v7"
         with:
-          context: "php/${{ matrix.base-image }}/${{ matrix.php-version }}"
+          context: "php/${{ matrix.base-image }}"
+          build-args: "PHP_VERSION=${{ matrix.php-version }}"
           load: true
           tags: "${{ env.IMAGE }}"
           # Scheduled builds must pick up fresh upstream packages

@@ -11,7 +11,7 @@ updates:
 
   - package-ecosystem: docker
     directories:
-      - "/php/alpine/*"
-      - "/php/debian/*"
+      - "/php/alpine"
+      - "/php/debian"
     schedule:
       interval: weekly
