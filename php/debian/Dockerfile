@@ -59,7 +59,8 @@ RUN pie install pecl/pcov \
     && pie install mongodb/mongodb-extension \
     && pie install imagick/imagick \
     && pie install phpredis/phpredis \
-    && pie install xdebug/xdebug
+    && pie install xdebug/xdebug \
+    && pie install phpstan/turbo
 
 # Composer
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
