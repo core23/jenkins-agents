@@ -53,10 +53,10 @@ COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 RUN set -eux; \
     v="$(echo "${PHP_VERSION}" | tr -d .)"; \
     if [ "${v}" -ge 83 ]; then \
-        apk add --no-cache libtool \
+        apk add --no-cache \
             -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
             -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
-            "php${v}-dev"; \
+            libtool "php${v}-dev"; \
         pie install \
             --with-php-config="/usr/bin/php-config${v}" \
             --with-phpize-path="/usr/bin/phpize${v}" \
