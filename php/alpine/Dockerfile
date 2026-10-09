@@ -49,16 +49,19 @@ RUN set -eux; \
 # PIE and PHPStan Turbo (needs a C++ compiler from alpine-sdk and the PHP headers)
 COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 
+# PHPStan Turbo requires PHP 8.3 or newer
 RUN set -eux; \
     v="$(echo "${PHP_VERSION}" | tr -d .)"; \
-    apk add --no-cache \
-        -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
-        -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
-        "php${v}-dev"; \
-    pie install \
-        --with-php-config-path="/usr/bin/php-config${v}" \
-        --with-phpize-path="/usr/bin/phpize${v}" \
-        phpstan/turbo
+    if [ "${v}" -ge 83 ]; then \
+        apk add --no-cache libtool \
+            -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
+            -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
+            "php${v}-dev"; \
+        pie install \
+            --with-php-config="/usr/bin/php-config${v}" \
+            --with-phpize-path="/usr/bin/phpize${v}" \
+            phpstan/turbo; \
+    fi
 
 # Get Composer
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
