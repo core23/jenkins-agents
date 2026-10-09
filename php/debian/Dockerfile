@@ -61,6 +61,9 @@ RUN pie install pecl/pcov \
     && pie install phpredis/phpredis \
     && pie install xdebug/xdebug
 
+# PHPStan Turbo requires PHP 8.3 or newer
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 83 ]; then pie install phpstan/turbo; fi
+
 # Composer
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
