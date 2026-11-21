@@ -32,8 +32,8 @@ RUN set -eux; \
     do \
         set -- "$@" "php${v}-${ext}"; \
     done; \
-    # PHP 8.5 ships cli, opcache and zlib in the core package and names xdebug differently
-    if [ "${v}" = "85" ]; then \
+    # PHP 8.5+ ships cli, opcache and zlib in the core package and names xdebug differently
+    if [ "${v}" -ge 85 ]; then \
         set -- "$@" "php${v}-pecl-xdebug"; \
     else \
         set -- "$@" "php${v}-cli" "php${v}-opcache" "php${v}-xdebug" "php${v}-zlib"; \

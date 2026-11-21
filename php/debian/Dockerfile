@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sendmail \
     wget \
     && exts="bcmath exif gd intl mysqli pcntl pdo_mysql soap xsl zip" \
-    # opcache is built into PHP 8.5 and only needs to be installed on older versions
+    # opcache is built into PHP 8.5+ and only needs to be installed on older versions
     && { php -m | grep -qi 'opcache' || exts="$exts opcache"; } \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" $exts \
