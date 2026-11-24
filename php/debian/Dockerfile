@@ -67,8 +67,21 @@ RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
         pie install pecl/pcov; \
     fi
 
+# imagick has no release for PHP 8.6 yet (Imagick/imagick#768 removes the zval_dtor() alias), patch master until it is released
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/imagick \
+        && git -C /tmp/imagick fetch --depth 1 https://github.com/Imagick/imagick.git 55ed2e9fda264395636a2e27e51f31673f5566ab \
+        && git -C /tmp/imagick checkout FETCH_HEAD \
+        && cd /tmp/imagick \
+        && sed -i 's/zval_dtor(/zval_ptr_dtor_nogc(/' imagick.c \
+        && phpize && ./configure && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable imagick \
+        && rm -rf /tmp/imagick; \
+    else \
+        pie install imagick/imagick; \
+    fi
+
 RUN pie install mongodb/mongodb-extension \
-    && pie install imagick/imagick \
     && pie install phpredis/phpredis \
     && pie install xdebug/xdebug
 
