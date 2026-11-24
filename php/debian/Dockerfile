@@ -55,8 +55,19 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # PIE
 COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 
-RUN pie install pecl/pcov \
-    && pie install mongodb/mongodb-extension \
+# pcov has no release for PHP 8.6 yet, build the fix from krakjoe/pcov#134 until it is released
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/pcov \
+        && git -C /tmp/pcov fetch --depth 1 https://github.com/krakjoe/pcov.git f04029fa86ae58c6dfff8049de8433669dbf1394 \
+        && git -C /tmp/pcov checkout FETCH_HEAD \
+        && cd /tmp/pcov && phpize && ./configure && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable pcov \
+        && rm -rf /tmp/pcov; \
+    else \
+        pie install pecl/pcov; \
+    fi
+
+RUN pie install mongodb/mongodb-extension \
     && pie install imagick/imagick \
     && pie install phpredis/phpredis \
     && pie install xdebug/xdebug
