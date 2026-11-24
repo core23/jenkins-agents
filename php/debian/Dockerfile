@@ -81,8 +81,20 @@ RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
         pie install imagick/imagick; \
     fi
 
+# phpredis has no release with PHP 8.6 support yet, build develop until it is released
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/phpredis \
+        && git -C /tmp/phpredis fetch --depth 1 https://github.com/phpredis/phpredis.git adf5196a9f1e601c4976a41a3657f533da7d69a4 \
+        && git -C /tmp/phpredis checkout FETCH_HEAD \
+        && cd /tmp/phpredis \
+        && phpize && ./configure && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable redis \
+        && rm -rf /tmp/phpredis; \
+    else \
+        pie install phpredis/phpredis; \
+    fi
+
 RUN pie install mongodb/mongodb-extension \
-    && pie install phpredis/phpredis \
     && pie install xdebug/xdebug
 
 # PHPStan Turbo requires PHP 8.3 or newer
