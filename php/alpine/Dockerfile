@@ -56,6 +56,7 @@ RUN set -eux; \
         apk add --no-cache \
             -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
             -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
+            -X https://dl-cdn.alpinelinux.org/alpine/edge/testing \
             libtool "php${v}-dev"; \
         pie install \
             --with-php-config="/usr/bin/php-config${v}" \
