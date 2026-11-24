@@ -94,8 +94,20 @@ RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
         pie install phpredis/phpredis; \
     fi
 
-RUN pie install mongodb/mongodb-extension \
-    && pie install xdebug/xdebug
+# xdebug 3.5 excludes PHP 8.6, build master until a release supports it
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/xdebug \
+        && git -C /tmp/xdebug fetch --depth 1 https://github.com/xdebug/xdebug.git 5e19866c1766e38c527f9f94faa170370dc4209f \
+        && git -C /tmp/xdebug checkout FETCH_HEAD \
+        && cd /tmp/xdebug \
+        && phpize && ./configure --enable-xdebug && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable xdebug \
+        && rm -rf /tmp/xdebug; \
+    else \
+        pie install xdebug/xdebug; \
+    fi
+
+RUN pie install mongodb/mongodb-extension
 
 # PHPStan Turbo requires PHP 8.3 or newer
 RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 83 ]; then pie install phpstan/turbo; fi
