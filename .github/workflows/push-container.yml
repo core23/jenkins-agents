@@ -80,5 +80,7 @@ jobs:
           # Scheduled builds must pick up fresh upstream packages
           no-cache: ${{ github.event_name == 'schedule' }}
           pull: true
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
           cache-from: "type=gha,scope=${{ matrix.php-version }}-${{ matrix.base-image }}"
           cache-to: "type=gha,mode=max,scope=${{ matrix.php-version }}-${{ matrix.base-image }}"

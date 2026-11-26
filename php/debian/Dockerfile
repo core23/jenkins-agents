@@ -109,7 +109,12 @@ RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
         pie install xdebug/xdebug; \
     fi
 
-RUN pie install mongodb/mongodb-extension
+# Authenticated GitHub access avoids anonymous rate limits when PIE downloads the package
+RUN --mount=type=secret,id=github_token \
+    if [ -s /run/secrets/github_token ]; then \
+        export COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"$(cat /run/secrets/github_token)\"}}"; \
+    fi; \
+    pie install mongodb/mongodb-extension
 
 # PHPStan Turbo requires PHP 8.3 or newer
 RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 83 ]; then pie install phpstan/turbo; fi
