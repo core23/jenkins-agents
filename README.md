@@ -15,9 +15,9 @@ The images are published to [DockerHub](https://hub.docker.com/r/core23/jenkins-
 | Tag                  | Description                                    |
 |----------------------|------------------------------------------------|
 | `latest`             | Newest PHP version (Alpine)                    |
-| `8.5`, `8.4`, `8.3`, `8.2` | PHP version on Alpine                    |
-| `8.5-alpine`, `8.4-alpine`, `8.3-alpine`, `8.2-alpine` | PHP version on Alpine |
-| `8.5-debian`, `8.4-debian`, `8.3-debian`, `8.2-debian` | PHP version on Debian |
+| `8.6`, `8.5`, `8.4`, `8.3`, `8.2` | PHP version on Alpine                    |
+| `8.6-alpine`, `8.5-alpine`, `8.4-alpine`, `8.3-alpine`, `8.2-alpine` | PHP version on Alpine |
+| `8.6-debian`, `8.5-debian`, `8.4-debian`, `8.3-debian`, `8.2-debian` | PHP version on Debian |
 
 The images are rebuilt every night to pick up security updates.
 

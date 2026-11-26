@@ -34,8 +34,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sendmail \
     wget \
     && exts="bcmath exif gd intl mysqli pcntl pdo_mysql soap xsl zip" \
-    # opcache is built into PHP 8.5 and only needs to be installed on older versions
+    # opcache is built into PHP 8.5+ and only needs to be installed on older versions
     && { php -m | grep -qi 'opcache' || exts="$exts opcache"; } \
+    # mbstring is no longer built into the PHP 8.6 image
+    && { php -m | grep -qi 'mbstring' || exts="$exts mbstring"; } \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" $exts \
     && apt-get clean \
@@ -55,11 +57,64 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # PIE
 COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 
-RUN pie install pecl/pcov \
-    && pie install mongodb/mongodb-extension \
-    && pie install imagick/imagick \
-    && pie install phpredis/phpredis \
-    && pie install xdebug/xdebug
+# pcov has no release for PHP 8.6 yet, build the fix from krakjoe/pcov#134 until it is released
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/pcov \
+        && git -C /tmp/pcov fetch --depth 1 https://github.com/krakjoe/pcov.git f04029fa86ae58c6dfff8049de8433669dbf1394 \
+        && git -C /tmp/pcov checkout FETCH_HEAD \
+        && cd /tmp/pcov && phpize && ./configure && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable pcov \
+        && rm -rf /tmp/pcov; \
+    else \
+        pie install pecl/pcov; \
+    fi
+
+# imagick has no release for PHP 8.6 yet (Imagick/imagick#768 removes the zval_dtor() alias), patch master until it is released
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/imagick \
+        && git -C /tmp/imagick fetch --depth 1 https://github.com/Imagick/imagick.git 55ed2e9fda264395636a2e27e51f31673f5566ab \
+        && git -C /tmp/imagick checkout FETCH_HEAD \
+        && cd /tmp/imagick \
+        && sed -i 's/zval_dtor(/zval_ptr_dtor_nogc(/' imagick.c \
+        && phpize && ./configure && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable imagick \
+        && rm -rf /tmp/imagick; \
+    else \
+        pie install imagick/imagick; \
+    fi
+
+# phpredis has no release with PHP 8.6 support yet, build develop until it is released
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/phpredis \
+        && git -C /tmp/phpredis fetch --depth 1 https://github.com/phpredis/phpredis.git adf5196a9f1e601c4976a41a3657f533da7d69a4 \
+        && git -C /tmp/phpredis checkout FETCH_HEAD \
+        && cd /tmp/phpredis \
+        && phpize && ./configure && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable redis \
+        && rm -rf /tmp/phpredis; \
+    else \
+        pie install phpredis/phpredis; \
+    fi
+
+# xdebug 3.5 excludes PHP 8.6, build master until a release supports it
+RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 86 ]; then \
+        git init /tmp/xdebug \
+        && git -C /tmp/xdebug fetch --depth 1 https://github.com/xdebug/xdebug.git 5e19866c1766e38c527f9f94faa170370dc4209f \
+        && git -C /tmp/xdebug checkout FETCH_HEAD \
+        && cd /tmp/xdebug \
+        && phpize && ./configure --enable-xdebug && make -j"$(nproc)" && make install \
+        && docker-php-ext-enable xdebug \
+        && rm -rf /tmp/xdebug; \
+    else \
+        pie install xdebug/xdebug; \
+    fi
+
+# Authenticated GitHub access avoids anonymous rate limits when PIE downloads the package
+RUN --mount=type=secret,id=github_token \
+    if [ -s /run/secrets/github_token ]; then \
+        export COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"$(cat /run/secrets/github_token)\"}}"; \
+    fi; \
+    pie install mongodb/mongodb-extension
 
 # PHPStan Turbo requires PHP 8.3 or newer
 RUN if [ "$(echo "${PHP_VERSION}" | tr -d .)" -ge 83 ]; then pie install phpstan/turbo; fi

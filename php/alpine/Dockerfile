@@ -32,8 +32,8 @@ RUN set -eux; \
     do \
         set -- "$@" "php${v}-${ext}"; \
     done; \
-    # PHP 8.5 ships cli, opcache and zlib in the core package and names xdebug differently
-    if [ "${v}" = "85" ]; then \
+    # PHP 8.5+ ships cli, opcache and zlib in the core package and names xdebug differently
+    if [ "${v}" -ge 85 ]; then \
         set -- "$@" "php${v}-pecl-xdebug"; \
     else \
         set -- "$@" "php${v}-cli" "php${v}-opcache" "php${v}-xdebug" "php${v}-zlib"; \
@@ -56,6 +56,7 @@ RUN set -eux; \
         apk add --no-cache \
             -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
             -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
+            -X https://dl-cdn.alpinelinux.org/alpine/edge/testing \
             libtool "php${v}-dev"; \
         pie install \
             --with-php-config="/usr/bin/php-config${v}" \

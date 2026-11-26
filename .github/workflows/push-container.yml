@@ -25,6 +25,7 @@ jobs:
           - "8.3"
           - "8.4"
           - "8.5"
+          - "8.6"
 
         base-image:
           - "alpine"
@@ -47,7 +48,7 @@ jobs:
             type=raw,value=${{ matrix.php-version }}-${{ matrix.base-image }}
             type=raw,value=${{ matrix.php-version }},enable=${{ startsWith(matrix.base-image, 'alpine') }}
             # latest points to the newest PHP version on Alpine, update it when a new PHP version is added
-            type=raw,value=latest,enable=${{ matrix.php-version == '8.5' && matrix.base-image == 'alpine' }}
+            type=raw,value=latest,enable=${{ matrix.php-version == '8.6' &&matrix.base-image == 'alpine' }}
 
       - name: "Setup Docker Buildx"
         uses: "docker/setup-buildx-action@v4"
@@ -79,5 +80,7 @@ jobs:
           # Scheduled builds must pick up fresh upstream packages
           no-cache: ${{ github.event_name == 'schedule' }}
           pull: true
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
           cache-from: "type=gha,scope=${{ matrix.php-version }}-${{ matrix.base-image }}"
           cache-to: "type=gha,mode=max,scope=${{ matrix.php-version }}-${{ matrix.base-image }}"
